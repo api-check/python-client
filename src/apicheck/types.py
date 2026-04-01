@@ -44,6 +44,8 @@ class SearchResult:
     result_type: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    city: Optional[str] = None
+    postalcode: Optional[str] = None
 
 
 @dataclass
@@ -75,14 +77,35 @@ class PhoneVerificationResponse:
 
 @dataclass
 class LookupOptions:
+    number_addition: Optional[str] = None
     fields: Optional[List[str]] = None
     aliases: Optional[bool] = None
     shortening: Optional[bool] = None
 
 
 @dataclass
-class SearchOptions:
+class GlobalSearchOptions:
     limit: Optional[int] = None
     city_id: Optional[int] = None
     street_id: Optional[int] = None
     postalcode_id: Optional[int] = None
+    locality_id: Optional[int] = None
+    municipality_id: Optional[int] = None
+
+
+@dataclass
+class SearchOptions:
+    limit: Optional[int] = None
+    city_id: Optional[int] = None
+
+
+@dataclass
+class AddressSearchOptions:
+    limit: Optional[int] = None
+    street_id: Optional[int] = None
+    city_id: Optional[int] = None
+    postalcode_id: Optional[int] = None
+    locality_id: Optional[int] = None
+    municipality_id: Optional[int] = None
+    number: Optional[str] = None
+    number_addition: Optional[str] = None
