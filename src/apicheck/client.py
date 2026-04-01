@@ -23,7 +23,7 @@ class ApiClient:
 
     def _extract_data(self, response: requests.Response) -> Any:
         """Extract data from API response."""
-        resp.raise_for_status()
+        response.raise_for_status()
         json_data = response.json()
         return json_data.get("data", json_data)
 
