@@ -1,6 +1,8 @@
 import requests
 from typing import Any, Optional, List
 
+from .exceptions import UnsupportedCountryError
+
 API_ENDPOINT = "https://api.apicheck.nl"
 
 # All supported countries for search
@@ -41,13 +43,23 @@ class ApiClient:
             postalcode: Postal code (e.g., "2513AA")
             number: House number (e.g., "1")
             number_addition: Optional number addition (e.g., "A", "B")
+            
+        Raises:
+            UnsupportedCountryError: If country is not supported for lookup
         """
+        country = country.lower()
+        if country not in COUNTRIES_LOOKUP:
+            raise UnsupportedCountryError(
+                f"Lookup not supported for country '{country}'. Supported: {COUNTRIES_LOOKUP}",
+                country
+            )
+        
         params = {"postalcode": postalcode, "number": number}
         if number_addition:
             params["numberAddition"] = number_addition
             
         resp = self._session.get(
-            f"{API_ENDPOINT}/lookup/v1/postalcode/{country.lower()}",
+            f"{API_ENDPOINT}/lookup/v1/postalcode/{country}",
             params=params,
             timeout=self.timeout
         )
@@ -55,8 +67,15 @@ class ApiClient:
 
     def get_number_additions(self, country: str, postalcode: str, number: str) -> dict:
         """Get available number additions for a postal code and house number."""
+        country = country.lower()
+        if country not in COUNTRIES_LOOKUP:
+            raise UnsupportedCountryError(
+                f"Lookup not supported for country '{country}'. Supported: {COUNTRIES_LOOKUP}",
+                country
+            )
+        
         resp = self._session.get(
-            f"{API_ENDPOINT}/lookup/v1/address/{country.lower()}",
+            f"{API_ENDPOINT}/lookup/v1/address/{country}",
             params={"postalcode": postalcode, "number": number, "fields": '["numberAdditions"]'},
             timeout=self.timeout
         )
@@ -65,6 +84,16 @@ class ApiClient:
     # ============================================
     # Search API (18 European countries)
     # ============================================
+
+    def _validate_search_country(self, country: str) -> str:
+        """Validate and normalize country code for search."""
+        country = country.lower()
+        if country not in COUNTRIES_ALL:
+            raise UnsupportedCountryError(
+                f"Search not supported for country '{country}'. Supported: {COUNTRIES_ALL}",
+                country
+            )
+        return country
 
     def global_search(self, country: str, query: str, limit: int = 10,
                       city_id: Optional[int] = None,
@@ -85,6 +114,8 @@ class ApiClient:
             locality_id: Filter by locality (Belgium)
             municipality_id: Filter by municipality (Belgium)
         """
+        country = self._validate_search_country(country)
+        
         params = {"query": query, "limit": limit}
         if city_id:
             params["city_id"] = city_id
@@ -98,7 +129,7 @@ class ApiClient:
             params["municipality_id"] = municipality_id
             
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/global/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/global/{country}",
             params=params,
             timeout=self.timeout
         )
@@ -117,8 +148,10 @@ class ApiClient:
 
     def search_city(self, country: str, name: str, limit: int = 10) -> list:
         """Search for cities by name."""
+        country = self._validate_search_country(country)
+        
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/city/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/city/{country}",
             params={"name": name, "limit": limit},
             timeout=self.timeout
         )
@@ -128,12 +161,14 @@ class ApiClient:
                       city_id: Optional[int] = None, 
                       limit: int = 10) -> list:
         """Search for streets by name."""
+        country = self._validate_search_country(country)
+        
         params = {"name": name, "limit": limit}
         if city_id:
             params["city_id"] = city_id
             
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/street/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/street/{country}",
             params=params,
             timeout=self.timeout
         )
@@ -143,12 +178,14 @@ class ApiClient:
                           city_id: Optional[int] = None,
                           limit: int = 10) -> list:
         """Search for postal codes."""
+        country = self._validate_search_country(country)
+        
         params = {"name": name, "limit": limit}
         if city_id:
             params["city_id"] = city_id
             
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/postalcode/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/postalcode/{country}",
             params=params,
             timeout=self.timeout
         )
@@ -159,8 +196,10 @@ class ApiClient:
         Search for localities (deelgemeenten) by name.
         Primarily relevant for Belgium.
         """
+        country = self._validate_search_country(country)
+        
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/locality/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/locality/{country}",
             params={"name": name, "limit": limit},
             timeout=self.timeout
         )
@@ -171,8 +210,10 @@ class ApiClient:
         Search for municipalities (gemeenten) by name.
         Primarily relevant for Belgium.
         """
+        country = self._validate_search_country(country)
+        
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/municipality/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/municipality/{country}",
             params={"name": name, "limit": limit},
             timeout=self.timeout
         )
@@ -193,6 +234,8 @@ class ApiClient:
         Provide at least one ID parameter (street_id, city_id, postalcode_id, 
         locality_id, or municipality_id).
         """
+        country = self._validate_search_country(country)
+        
         params = {"limit": limit}
         if street_id:
             params["street_id"] = street_id
@@ -210,7 +253,7 @@ class ApiClient:
             params["numberAddition"] = number_addition
             
         resp = self._session.get(
-            f"{API_ENDPOINT}/search/v1/address/{country.lower()}",
+            f"{API_ENDPOINT}/search/v1/address/{country}",
             params=params,
             timeout=self.timeout
         )
